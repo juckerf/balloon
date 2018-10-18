@@ -1,6 +1,7 @@
 <?php
 use Balloon\App;
 use Balloon\Auth\Adapter\Basic\Db;
+use Balloon\Auth\Adapter\AccessTicket;
 use Balloon\Converter;
 use Balloon\Converter\Adapter\ImagickImage;
 use Balloon\Converter\Adapter\Office;
@@ -205,6 +206,10 @@ return [
     ],
     Migration::class => [
         'calls' => [
+            // Delta\AddTestUser::class => [
+            //     'method' => 'injectDelta',
+            //     'arguments' => ['delta' => '{'.Delta\AddTestUser::class.'}']
+            // ],
             Delta\LdapGroupsToLocalGroups::class => [
                 'method' => 'injectDelta',
                 'arguments' => ['delta' => '{'.Delta\LdapGroupsToLocalGroups::class.'}']
@@ -272,6 +277,10 @@ return [
             'basic_db' => [
                 'method' => 'injectAdapter',
                 'arguments' => ['adapter' => '{'.Db::class.'}', 'name' => 'basic_db']
+            ],
+            'access_ticket' => [
+                'method' => 'injectAdapter',
+                'arguments' => ['adapter' => '{'.AccessTicket::class.'}', 'name' => 'access_ticket']
             ],
         ],
     ],

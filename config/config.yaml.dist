@@ -295,3 +295,7 @@ Micro\Auth\Auth:
             mail:
               type: "string"
               attr: "mail"
+              Balloon\Auth\Adapter\AccessTicket:
+                arguments:
+                  config:
+                    key: "secret"

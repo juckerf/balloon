@@ -25,6 +25,7 @@ use Balloon\Filesystem\Node\File;
 use Balloon\Filesystem\Node\NodeInterface;
 use Balloon\Helper;
 use Balloon\Server;
+use Balloon\Auth\Adapter\AccessTicket;
 use Balloon\Server\User;
 use Micro\Http\Response;
 use MongoDB\BSON\UTCDateTime;
@@ -55,6 +56,13 @@ class Nodes extends Controller
     protected $server;
 
     /**
+     * AccessTicket.
+     *
+     * @var AccessTicket
+     */
+    protected $accessTicket;
+
+    /**
      * User.
      *
      * @var User
@@ -71,13 +79,14 @@ class Nodes extends Controller
     /**
      * Initialize.
      */
-    public function __construct(Server $server, NodeAttributeDecorator $decorator, LoggerInterface $logger)
+    public function __construct(Server $server, NodeAttributeDecorator $decorator, LoggerInterface $logger, AccessTicket $accessTicket)
     {
         $this->fs = $server->getFilesystem();
         $this->user = $server->getIdentity();
         $this->server = $server;
         $this->node_decorator = $decorator;
         $this->logger = $logger;
+        $this->accessTicket = $accessTicket;
     }
 
     /**
@@ -192,6 +201,49 @@ class Nodes extends Controller
                 'data' => $this->node_decorator->decorate($node),
             ];
         });
+    }
+
+    /**
+     * @api {post} /api/v2/nodes/:id/ticket Create download ticket
+     * @apiVersion 2.0.1
+     * @apiName postTicket
+     * @apiGroup Node
+     * @apiPermission none
+     * @apiDescription Create an access ticken for stream downloads
+     * @apiUse _getNodes
+     * @apiUse _conflictNode
+     * @apiUse _multiError
+     * @apiUse _writeAction
+     *
+     * @apiExample (cURL) example:
+     * curl -XPOST "https://SERVER/api/v2/nodes/ticket?id=544627ed3c58891f058b4686"
+     * curl -XPOST "https://SERVER/api/v2/nodes/544627ed3c58891f058b4686/ticket"
+     * curl -XPOST "https://SERVER/api/v2/nodes/ticket?p=/absolute/path/to/my/node"
+     *
+     *
+     * @apiSuccessExample {json} Success-Response (conflict=1):
+     * HTTP/1.1 200 OK
+     * {
+     *      "id": "544627ed3c58891f058b4686",
+     *      "ticket": "am9obi5kb2U7MTUzOTc4MjM3MTswNTk4ZTgwNmM5NWYwMWI1YzZkYmFkYzI5ODUwZDRiOGViMzE5YmVmNzNmMGVmMDU1NjVjOTkxZjJjYzFjZTYw"
+     * }
+     *
+     * @param array|string $id
+     * @param array|string $p
+     * @param string       $destid
+     * @param string       $destp
+     */
+    public function postTicket(
+        $id = null,
+        $p = null
+    ): Response {
+        $node = $this->_getNode($id, $p);
+
+        $data = [
+            'id'        => (string)$node->getId(),
+            'ticket'    => $this->accessTicket->createTicket($this->user, $node)
+        ];
+        return (new Response())->setCode(200)->setBody($data);
     }
 
     /**
