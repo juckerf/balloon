@@ -4,6 +4,7 @@
 
 * API: [CHANGE] No authentication for GET /api/v1 (Entrypoint only) required anymore
 * API: [FEATURE] Progressive stream via http #199 
+* CORE: [CHANGE] Upgrade to stable v3 \TaskScheduler #220, possibilty to flush job queue using ballooncli jobs -f
 
 
 ## 2.1.9
