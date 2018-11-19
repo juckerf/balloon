@@ -3,6 +3,7 @@
 **Date**: Thu Nov 15 17:12:32 CET 2018\
 
 * API: [CHANGE] No authentication for GET /api/v1 (Entrypoint only) required anymore
+* API: [FEATURE] Progressive stream via http #199 
 
 
 ## 2.1.9
