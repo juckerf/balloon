@@ -71,7 +71,7 @@ class Http
         $hook->injectHook(new class() extends AbstractHook {
             public function preAuthentication(Auth $auth): void
             {
-                if ('/index.php/api' === $_SERVER['ORIG_SCRIPT_NAME'] || '/index.php/api/v2' === $_SERVER['ORIG_SCRIPT_NAME']) {
+                if (in_array($_SERVER['ORIG_SCRIPT_NAME'], ['/index.php/api', '/index.php/api/v1', '/index.php/api/v2'])) {
                     $auth->injectAdapter(new AuthNone());
                 }
             }
