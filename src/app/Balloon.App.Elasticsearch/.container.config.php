@@ -6,14 +6,32 @@ use Balloon\App\Elasticsearch\Hook as ElasticsearchHook;
 use Balloon\Hook;
 use Balloon\Bootstrap\AbstractBootstrap;
 use Balloon\App\Elasticsearch\Constructor\Http;
-use Balloon\App\Elasticsearch\Elasticsearch;
+use Elasticsearch\Client;
+use Elasticsearch\ClientBuilder;
+use Balloon\Bootstrap\Cli as CliBootstrap;
+use Balloon\App\Elasticsearch\Constructor\Cli;
 
 return [
-    Elasticsearch::class => [
-        'arguments' => [
-            'config' => [
-                'server' => "{ENV(BALLOON_ELASTICSEARCH_URI,http://localhost:9200)}"
+    Client::class => [
+        'use' => ClientBuilder::class,
+        'factory' => 'create',
+        'calls' => [
+            [
+                'method' => 'setHosts',
+                'arguments' => ['hosts' => ["{ENV(BALLOON_ELASTICSEARCH_URI,http://localhost:9200)}"]]
+            ],
+            [
+                'method' => 'build',
+                'select' => true,
             ]
+        ],
+    ],
+    CliBootstrap::class => [
+        'calls' => [
+            'Balloon.App.Elasticsearch' => [
+                'method' => 'inject',
+                'arguments' => ['object' => '{'.Cli::class.'}']
+            ],
         ]
     ],
     Migration::class => [
@@ -21,10 +39,6 @@ return [
             Installation::class => [
                 'method' => 'injectDelta',
                 'arguments' => ['delta' => '{'.Installation::class.'}']
-            ],
-            v6::class => [
-                'method' => 'injectDelta',
-                'arguments' => ['delta' => '{'.v6::class.'}']
             ],
         ]
     ],

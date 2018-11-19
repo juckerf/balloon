@@ -1,10 +1,12 @@
-## 2.2.0
+## 2.2.0-beta1
 **Maintainer**: Raffael Sahli <sahli@gyselroth.com>\
-**Date**: Thu Nov 15 17:12:32 CET 2018\
+**Date**: \
+**Note**: @see UPGRADE.md
 
 * API: [CHANGE] No authentication for GET /api/v1 (Entrypoint only) required anymore
 * API: [FEATURE] Progressive stream via http #199 
 * CORE: [CHANGE] Upgrade to stable v3 \TaskScheduler #220, possibilty to flush job queue using ballooncli jobs -f
+* CORE: [CHANGE] Support for elasticsearch 6.x #197 
 
 
 ## 2.1.9

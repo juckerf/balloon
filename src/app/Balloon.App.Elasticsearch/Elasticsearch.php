@@ -16,31 +16,15 @@ use Balloon\Filesystem\Node\NodeInterface;
 use Balloon\Server;
 use Balloon\Server\User;
 use Elasticsearch\Client;
-use Elasticsearch\ClientBuilder;
 use Generator;
-use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 
 class Elasticsearch
 {
     /**
-     * ES server.
-     *
-     * @var array
-     */
-    protected $es_server = ['http://localhost:9200'];
-
-    /**
-     * ES index.
-     *
-     * @var string
-     */
-    protected $es_index = 'balloon';
-
-    /**
      * ES client.
      *
-     * @var Elasticsearch
+     * @var Client
      */
     protected $client;
 
@@ -65,58 +49,24 @@ class Elasticsearch
      */
     protected $logger;
 
-    // Constructor
-    public function __construct(Server $server, LoggerInterface $logger, ?Iterable $config = null)
+    /**
+     * Constructor.
+     */
+    public function __construct(Server $server, Client $client, LoggerInterface $logger)
     {
-        $this->setOptions($config);
+        $this->client = $client;
         $this->logger = $logger;
         $this->user = $server->getIdentity();
         $this->fs = $server->getFilesystem();
     }
 
     /**
-     * Set options.
-     *
-     * @return Elasticsearch
-     */
-    public function setOptions(?Iterable $config = null): self
-    {
-        if (null === $config) {
-            return $this;
-        }
-
-        foreach ($config as $option => $value) {
-            switch ($option) {
-                case 'server':
-                    $this->es_server = (array) $value;
-
-                break;
-                case 'index':
-                    $this->es_index = (string) $value;
-
-                break;
-                default:
-                    throw new InvalidArgumentException('invalid option '.$option.' given');
-            }
-        }
-
-        return $this;
-    }
-
-    /**
      * Search.
-     *
-     * @param int $skip
-     * @param int $limit
-     * @param int $total
      */
     public function search(array $query, int $deleted = NodeInterface::DELETED_INCLUDE, ?int $skip = null, ?int $limit = null, ?int &$total = null): Generator
     {
+        unset($query['body']['query']['bool']['must']);
         $result = $this->executeQuery($query, $skip, $limit);
-
-        if (isset($result['error'])) {
-            throw new Exception\InvalidQuery('failed search index, query failed');
-        }
 
         $this->logger->debug('elasticsearch query executed with ['.$result['hits']['total'].'] hits', [
             'category' => get_class($this),
@@ -133,9 +83,9 @@ class Elasticsearch
 
         $nodes = [];
         foreach ($result['hits']['hits'] as $node) {
-            if ('storage' === $node['_type']) {
+            if ('nodes' === $node['_index']) {
                 $nodes[$node['_id']] = $node;
-            } elseif ('fs' === $node['_type']) {
+            } elseif ('blobs' === $node['_index']) {
                 if (isset($node['_source']['metadata']['ref'])) {
                     foreach ($node['_source']['metadata']['ref'] as $blob) {
                         $nodes[$blob['id']] = $blob;
@@ -151,28 +101,6 @@ class Elasticsearch
         }
 
         return $this->fs->findNodesById(array_keys($nodes), null, $deleted);
-    }
-
-    /**
-     * Get index name.
-     */
-    public function getIndex(): string
-    {
-        return $this->es_index;
-    }
-
-    /**
-     * Get es client.
-     */
-    public function getEsClient(): Client
-    {
-        if ($this->client instanceof Client) {
-            return $this->client;
-        }
-
-        return $this->client = ClientBuilder::create()
-            ->setHosts($this->es_server)
-            ->build();
     }
 
     /**
@@ -196,7 +124,6 @@ class Elasticsearch
         foreach ($shares as $share) {
             $share = (string) $share;
             $share_filter['bool']['should'][]['term']['metadata.share_ref.share'] = $share;
-            $share_filter['bool']['should'][]['term']['reference'] = $share;
             $share_filter['bool']['should'][]['term']['shared'] = $share;
             $share_filter['bool']['minimum_should_match'] = 1;
         }
@@ -218,7 +145,6 @@ class Elasticsearch
         ];
 
         $query['_source'] = ['metadata.*', '_id', 'owner'];
-        $query['index'] = $this->es_index;
         $query['from'] = $skip;
         $query['size'] = $limit;
 
@@ -227,14 +153,10 @@ class Elasticsearch
             'params' => $query,
         ]);
 
-        $result = $this->getEsClient()->search($query);
+        $result = $this->client->search($query);
 
-        if (null === $result) {
-            $this->logger->error('failed search elastic, query returned NULL', [
-                'category' => get_class($this),
-            ]);
-
-            throw new Exception\InvalidQuery('general search error occured');
+        if ($result === null || $result['_shards']['failed'] > 0) {
+            throw new Exception\InvalidQuery('elasticsearch query failed');
         }
 
         return $result;
