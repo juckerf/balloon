@@ -5,6 +5,7 @@
 [ ![Download](https://api.bintray.com/packages/gyselroth/balloon/balloon/images/download.svg) ](https://bintray.com/gyselroth/balloon/balloon/_latestVersion) 
  [![GitHub license](https://img.shields.io/badge/license-GPL-blue.svg)](https://raw.githubusercontent.com/gyselroth/balloon/master/LICENSE)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/gyselroth/balloon/badges/quality-score.png)](https://scrutinizer-ci.com/g/gyselroth/balloon)
+[![Documentation Status](https://readthedocs.org/projects/balloon/badge/?version=latest)](https://balloon.readthedocs.io/en/latest/?badge=latest)
 
 <p align="center">
     <img src="https://raw.githubusercontent.com/gyselroth/balloon-screenshots/master/src/tree.png"/>
